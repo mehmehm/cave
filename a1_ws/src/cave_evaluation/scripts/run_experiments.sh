@@ -2,11 +2,13 @@
 # Run cave-exploration experiments from ONE terminal.
 #
 # For every configuration (and repeat) this script:
-#   1. starts roscore, the Gazebo cave world and the A1      (was terminals 1-3)
-#   2. starts timestamp repair, IMU filter and LIO-SAM       (was terminals 4-6)
-#   3. starts mapping, fusion, selector, voxel map, frontier,
-#      planner, follower, mission manager and metrics logger (was terminals 7-14)
-#   4. waits until the robot is back at the start (or the 40 min cap),
+#   1. starts roscore and the cave world (WORLD_CMD)            terminal 1
+#   2. spawns the A1 and waits for its LiDAR and IMU             terminal 2
+#   3. IMU filter, Velodyne time repair and LIO-SAM              terminals 3-5
+#   4. fusion, mode selector, voxel map, OctoMap, frontier
+#      detector, metrics logger, rosbag, planner, follower
+#      and mission manager                                       terminals 6-13
+#   5. waits until the robot is back at the start (or the 40 min cap),
 #      then shuts everything down and moves to the next run.
 # All output goes to log files; this terminal shows one status line per minute.
 #
@@ -14,6 +16,7 @@
 #   ./run_experiments.sh -c ADAPTIVE             # one configuration
 #   ./run_experiments.sh -c "RGB_LIDAR ADAPTIVE" -n 3 --rviz
 #   Ctrl-C stops the current run cleanly and exits.
+# Run it with:  bash run_experiments.sh ...   (or chmod +x it once).
 
 set -uo pipefail
 # Job control: background stages get their own process group and, unlike
@@ -35,6 +38,7 @@ Options:
   -s, --speed V         max linear speed m/s (default 0.35)
       --auto-threshold  calibrate adaptive thresholds at the start of each run
       --rviz            open RViz during runs
+      --no-bag          do not record a rosbag
       --config FILE     use another experiment.conf
   -h, --help
 EOF
@@ -45,7 +49,9 @@ for ((i = 0; i < ${#ARGS[@]}; i++)); do
   [[ "${ARGS[$i]}" == "--config" ]] && CONF="${ARGS[$((i + 1))]}"
 done
 # shellcheck source=/dev/null
-source "$CONF" || { echo "Cannot read $CONF"; exit 1; }
+# tr strips Windows line endings in case the file was edited on Windows.
+source <(tr -d '\r' < "$CONF") || { echo "Cannot read $CONF"; exit 1; }
+[[ -f "$CONF" ]] || { echo "Cannot read $CONF"; exit 1; }
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -55,6 +61,7 @@ while [[ $# -gt 0 ]]; do
     -s|--speed) MAX_LINEAR_SPEED="$2"; shift 2 ;;
     --auto-threshold) THRESHOLD_MODE=auto; shift ;;
     --rviz) RVIZ=true; shift ;;
+    --no-bag) RECORD_BAG=false; shift ;;
     --config) shift 2 ;;
     -h|--help) usage; exit 0 ;;
     *) echo "Unknown option: $1"; usage; exit 1 ;;
@@ -62,15 +69,26 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---------------------------------------------------------------- environment
+# ROS setup files reference unset variables, so relax 'set -u' while sourcing.
+set +u
 # shellcheck source=/dev/null
 source "$ROS_SETUP"
 for ws in "${WORKSPACES[@]}"; do
   # shellcheck source=/dev/null
-  [[ -f "$ws" ]] && source "$ws" --extend
+  if [[ -f "$ws" ]]; then source "$ws" --extend; else echo "WARNING: workspace not found: $ws"; fi
+done
+set -u
+for pkg in cave_evaluation cave_exploration cave_multimodal_fusion cave_sensor_robot; do
+  rospack find "$pkg" >/dev/null 2>&1 || { echo "ROS package '$pkg' not found - check WORKSPACES in $CONF and run catkin_make"; exit 1; }
+done
+for f in "$(rospack find cave_exploration)/scripts/mission_manager.py" \
+         "$(rospack find cave_multimodal_fusion)/scripts/multimodal_mode_selector_experiment.py"; do
+  [[ -x "$f" ]] || { echo "Not executable: $f  (run: chmod +x '$f')"; exit 1; }
+  if grep -q $'\r' "$f"; then echo "Windows line endings in $f  (run: sed -i 's/\\r\$//' '$f')"; exit 1; fi
 done
 # LIO_SAM_LAUNCH may use rospack, so re-read only that line now ROS is sourced
 # (re-sourcing the whole file would undo the command-line options).
-eval "$(grep -E '^LIO_SAM_LAUNCH=' "$CONF" | tail -n 1)"
+eval "$(tr -d '\r' < "$CONF" | grep -E '^LIO_SAM_LAUNCH=' | tail -n 1)"
 
 if [[ -z "${WORLD_CMD// }" ]]; then
   echo "Set WORLD_CMD in $CONF to the command that opens the cave world."; exit 1
@@ -78,7 +96,7 @@ fi
 if [[ ! -f "$LIO_SAM_LAUNCH" ]]; then
   echo "LIO-SAM launch file not found: '$LIO_SAM_LAUNCH' (set LIO_SAM_LAUNCH in $CONF)"; exit 1
 fi
-mkdir -p "$RESULTS_DIR" "$LOG_DIR"
+mkdir -p "$RESULTS_DIR" "$LOG_DIR" "$BAG_DIR"
 
 PIDS=()
 log() { printf '[%s] %s\n' "$(date +%H:%M:%S)" "$*"; }
@@ -145,7 +163,7 @@ run_one() {
   start_bg "$dir/a1.log" "roslaunch cave_sensor_robot spawn_cave_a1.launch"
   wait_for 180 "A1 LiDAR" "topic_alive /velodyne_points" || return 1
   wait_for 60 "A1 IMU" "topic_alive /a1/trunk_imu" || return 1
-  sleep 5   # let CHAMP stand the robot up
+  sleep 15  # let CHAMP stand the robot up before LIO-SAM starts
 
   start_bg "$dir/localisation.log" \
     "roslaunch cave_evaluation localisation.launch lio_sam_launch:='$LIO_SAM_LAUNCH'"
@@ -154,7 +172,8 @@ run_one() {
   start_bg "$dir/pipeline.log" \
     "roslaunch cave_evaluation pipeline.launch configuration:=$cfg condition:=$CONDITION \
      run_id:=$run_id output_directory:='$RESULTS_DIR' max_run_seconds:=$MAX_RUN_SECONDS \
-     max_linear_speed:=$MAX_LINEAR_SPEED threshold_mode:=$THRESHOLD_MODE rviz:=$RVIZ"
+     max_linear_speed:=$MAX_LINEAR_SPEED threshold_mode:=$THRESHOLD_MODE rviz:=$RVIZ \
+     cmd_vel_topic:=$CMD_VEL_TOPIC record_bag:=$RECORD_BAG bag_directory:='$BAG_DIR'"
   local pipeline_pid="${PIDS[-1]}"
 
   local csv
@@ -197,6 +216,7 @@ PY
   fi
 }
 
+log "Bags: $RECORD_BAG ($BAG_DIR) | cmd_vel: $CMD_VEL_TOPIC"
 log "Configurations: $CONFIGS | repeats: $REPEATS | cap: $((MAX_RUN_SECONDS / 60)) min sim time | speed: $MAX_LINEAR_SPEED m/s"
 for ((rep = 1; rep <= REPEATS; rep++)); do
   for cfg in $CONFIGS; do

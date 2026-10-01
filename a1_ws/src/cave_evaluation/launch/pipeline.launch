@@ -1,9 +1,11 @@
 <launch>
-  <!-- Stage 3: everything from mapping to metrics, for ONE experiment run.
+  <!-- Stage 3: everything from mapping to metrics, for ONE experiment run
+       (your terminals 6-13). Run after Gazebo, the A1 and LIO-SAM are up.
        roslaunch cave_evaluation pipeline.launch configuration:=ADAPTIVE run_id:=run01
        The launch ends by itself when the mission manager finishes
-       (robot back at start, or the 40 min cap), and the logger then writes
-       <configuration>_<condition>_<run_id>.csv and _summary.json. -->
+       (robot back at start, or the 40 min cap); the logger then writes
+       <configuration>_<condition>_<run_id>.csv and _summary.json, and the
+       rosbag is closed. -->
   <arg name="configuration" default="ADAPTIVE"/>   <!-- ADAPTIVE | RGB_LIDAR | THERMAL_LIDAR | LIDAR_ONLY -->
   <arg name="condition" default="MIXED"/>
   <arg name="run_id" default="run01"/>
@@ -11,37 +13,70 @@
   <arg name="max_run_seconds" default="2400"/>
   <arg name="max_linear_speed" default="0.35"/>
   <arg name="threshold_mode" default="fixed"/>
+  <!-- CHAMP's velocity input for the A1 (your terminal 13 used /a1/cmd_vel). -->
+  <arg name="cmd_vel_topic" default="/a1/cmd_vel"/>
   <arg name="rviz" default="false"/>
   <arg name="rviz_config" default="$(env HOME)/catkin_ws/pre-slam voxel map/trial1.rviz"/>
 
+  <!-- Rosbag (your terminal 12). The directory must exist. -->
+  <arg name="record_bag" default="true"/>
+  <arg name="bag_directory" default="$(env HOME)/a1_ws/experiments/bags"/>
+  <arg name="bag_name"
+       default="$(eval arg('configuration').lower() + '_' + arg('condition').lower() + '_' + arg('run_id'))"/>
+
   <param name="use_sim_time" value="true"/>
 
-  <!-- Mapping and traversability -->
-  <include file="$(find cave_multimodal_fusion)/launch/octomap_lio_sam.launch"/>
-  <include file="$(find cave_exploration)/launch/terrain_slope_guard.launch"/>
-
-  <!-- Perception -->
-  <include file="$(find cave_multimodal_fusion)/launch/rgb_thermal_lidar_a1.launch"/>
+  <!-- Perception (terminals 6-8) -->
+  <include file="$(find cave_multimodal_fusion)/launch/rgb_thermal_lidar_a1.launch">
+    <arg name="fixed_frame" value="lio_odom"/>
+  </include>
   <include file="$(find cave_multimodal_fusion)/launch/multimodal_mode_selector_experiment.launch">
     <arg name="operating_mode" value="$(arg configuration)"/>
     <arg name="threshold_mode" value="$(arg threshold_mode)"/>
   </include>
-  <include file="$(find cave_multimodal_fusion)/launch/multimodal_voxel_map_experiment.launch"/>
+  <include file="$(find cave_multimodal_fusion)/launch/multimodal_voxel_map_experiment.launch">
+    <arg name="visualization_min_z" value="-0.40"/>
+    <arg name="visualization_max_z" value="1.30"/>
+  </include>
 
-  <!-- Exploration, mission and return to start -->
+  <!-- Mapping and traversability (terminal 9) -->
+  <include file="$(find cave_multimodal_fusion)/launch/octomap_lio_sam.launch"/>
+  <include file="$(find cave_exploration)/launch/terrain_slope_guard.launch"/>
+
+  <!-- Exploration, mission and return to start (terminals 10 and 13) -->
   <include file="$(find cave_exploration)/launch/frontier_detector.launch"/>
   <include file="$(find cave_exploration)/launch/autonomous_exploration.launch">
     <arg name="max_run_seconds" value="$(arg max_run_seconds)"/>
     <arg name="max_linear_speed" value="$(arg max_linear_speed)"/>
+    <arg name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
   </include>
 
-  <!-- Metrics -->
+  <!-- Metrics (terminal 11) -->
   <include file="$(find cave_multimodal_fusion)/launch/experiment_metrics.launch">
     <arg name="configuration" value="$(arg configuration)"/>
     <arg name="condition" value="$(arg condition)"/>
     <arg name="run_id" value="$(arg run_id)"/>
     <arg name="output_directory" value="$(arg output_directory)"/>
   </include>
+
+  <!-- Rosbag (terminal 12): same topics as before plus the mission topics. -->
+  <node if="$(arg record_bag)" pkg="rosbag" type="record" name="rosbag_record"
+        output="log"
+        args="--lz4 -O $(arg bag_directory)/$(arg bag_name).bag
+              /clock /tf /tf_static
+              /velodyne_points /velodyne_points_timed
+              /rgb_camera/image_raw /thermal_camera/image_raw
+              /lio_sam/mapping/odometry
+              /cave/fusion/rgb_thermal_lidar_points /cave/fusion/active_points
+              /cave/perception/mode /cave/perception/mode_event
+              /cave/perception/brightness /cave/perception/brightness_thresholds
+              /cave/perception/rgb_quality /cave/perception/thermal_quality
+              /cave/perception/rgb_valid_fraction /cave/perception/thermal_valid_fraction
+              /cave/perception/selected_valid_fraction /cave/perception/selector_processing_ms
+              /cave/map/voxel_count /cave/map/visible_voxel_count
+              /cave/exploration/planner_status /cave/exploration/follower_status
+              /cave/mission/phase /cave/mission/event /cave/mission/distance_to_start
+              /a1/cmd_vel /a1/cmd_vel/smooth"/>
 
   <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz"
         args="-d '$(arg rviz_config)'"/>
