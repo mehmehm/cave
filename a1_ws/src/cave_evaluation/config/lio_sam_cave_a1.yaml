@@ -1,0 +1,80 @@
+lio_sam:
+  # Topics
+  pointCloudTopic: "/velodyne_points"
+  imuTopic: "/a1/imu/lio_filtered"
+  odomTopic: "/lio_sam/imu/odometry"
+  gpsTopic: "/unused/gps"
+
+  # Frames
+  lidarFrame: "a1/velodyne_link"
+  baselinkFrame: "a1/base"
+  odometryFrame: "lio_odom"
+  mapFrame: "map"
+
+  # No GPS
+  useImuHeadingInitialization: false
+  useGpsElevation: false
+  gpsCovThreshold: 2.0
+  poseCovThreshold: 25.0
+
+  savePCD: false
+  savePCDDirectory: "/Downloads/LOAM/"
+
+  # Velodyne VLP-16
+  sensor: velodyne
+  N_SCAN: 16
+  Horizon_SCAN: 1800
+  downsampleRate: 1
+  lidarMinRange: 0.5
+  lidarMaxRange: 50.0
+
+  # Simulated IMU
+  imuAccNoise: 3.9939570888238808e-03
+  imuGyrNoise: 1.5636343949698187e-03
+  imuAccBiasN: 6.4356659353532566e-05
+  imuGyrBiasN: 3.5640318696367613e-05
+  imuGravity: 9.80511
+  imuRPYWeight: 0.01
+
+  # LiDAR -> IMU transform
+  extrinsicTrans: [0.1, 0.0, 0.3]
+
+  # Their axes are aligned
+  extrinsicRot: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+  extrinsicRPY: [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
+
+  # Indoor mapping
+  edgeThreshold: 1.0
+  surfThreshold: 0.1
+  edgeFeatureMinValidNum: 10
+  surfFeatureMinValidNum: 100
+
+  odometrySurfLeafSize: 0.2
+  mappingCornerLeafSize: 0.1
+  mappingSurfLeafSize: 0.2
+
+  # A1 is a 3-D robot, so do not constrain height
+  z_tollerance: 1000
+  rotation_tollerance: 1000
+
+  numberOfCores: 2
+  mappingProcessInterval: 0.15
+
+  surroundingkeyframeAddingDistThreshold: 0.5
+  surroundingkeyframeAddingAngleThreshold: 0.1
+  surroundingKeyframeDensity: 1.0
+  surroundingKeyframeSearchRadius: 30.0
+
+  # Loop closure
+  loopClosureEnableFlag: true
+  loopClosureFrequency: 1.0
+  surroundingKeyframeSize: 50
+  historyKeyframeSearchRadius: 8.0
+  historyKeyframeSearchTimeDiff: 20.0
+  historyKeyframeSearchNum: 25
+  historyKeyframeFitnessScore: 0.3
+
+  globalMapVisualizationSearchRadius: 100.0
+  globalMapVisualizationPoseDensity: 1.0
+  globalMapVisualizationLeafSize: 0.2

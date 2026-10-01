@@ -1,0 +1,76 @@
+{
+  "active_cloud_hz": 2.562134152192688,
+  "active_cloud_messages": 534,
+  "active_points": 2017475,
+  "condition": "MIXED",
+  "configuration": "LIDAR_ONLY",
+  "distance_m": 69.67826247885944,
+  "duration_s": 208.42,
+  "final_distance_to_start_m": 25.497705426708883,
+  "goals_reached": 0,
+  "metrics": {
+    "brightness": {
+      "count": 4251,
+      "max": 0.1630852073431015,
+      "mean": 0.12210628600106242,
+      "min": 0.06789245456457138
+    },
+    "rgb_quality": {
+      "count": 4248,
+      "max": 0.37704288959503174,
+      "mean": 0.3448296262972099,
+      "min": 0.28566837310791016
+    },
+    "rgb_valid_fraction": {
+      "count": 534,
+      "max": 0.2537993788719177,
+      "mean": 0.21928735004828664,
+      "min": 0.20162345468997955
+    },
+    "selected_valid_fraction": {
+      "count": 534,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0
+    },
+    "selector_processing_ms": {
+      "count": 534,
+      "max": 13.239100456237793,
+      "mean": 1.334496898430117,
+      "min": 0.41761401295661926
+    },
+    "thermal_quality": {
+      "count": 534,
+      "max": 0.2531915009021759,
+      "mean": 0.2184546928336558,
+      "min": 0.20151199400424957
+    },
+    "thermal_valid_fraction": {
+      "count": 534,
+      "max": 0.2531915009021759,
+      "mean": 0.2184546928336558,
+      "min": 0.20151199400424957
+    },
+    "visible_voxel_count": {
+      "count": 414,
+      "max": 6694.0,
+      "mean": 4395.826086956522,
+      "min": 706.0
+    },
+    "voxel_count": {
+      "count": 740,
+      "max": 29979.0,
+      "mean": 18917.089189189188,
+      "min": 1735.0
+    }
+  },
+  "mission_events": [
+    "0.0 WAITING->EXPLORING start=(0.00, -0.00) frame=lio_odom"
+  ],
+  "mission_phase": "EXPLORING",
+  "mode_switches": 0,
+  "planner_failures": 2,
+  "plans_succeeded": 293,
+  "returned_to_start": false,
+  "run_id": "run01"
+}

@@ -25,6 +25,8 @@ set -uo pipefail
 set -m
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# The repo root (e.g. ~/cave/cave): this script is in a1_ws/src/cave_evaluation/scripts.
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 CONF="$SCRIPT_DIR/../config/experiment.conf"
 RVIZ=false
 
@@ -69,22 +71,25 @@ while [[ $# -gt 0 ]]; do
 done
 
 # ---------------------------------------------------------------- environment
+# Start from a clean ROS environment so ONLY the workspaces in WORKSPACES are
+# used, whatever this terminal had loaded before (e.g. from ~/.bashrc).
+unset CMAKE_PREFIX_PATH ROS_PACKAGE_PATH PYTHONPATH LD_LIBRARY_PATH PKG_CONFIG_PATH \
+      ROS_DISTRO ROS_ROOT ROS_ETC_DIR ROS_VERSION ROS_PYTHON_VERSION ROSLISP_PACKAGE_DIRECTORIES
 # ROS setup files reference unset variables, so relax 'set -u' while sourcing.
 set +u
-# Keep whatever this terminal already has (e.g. the workspace that holds the
-# cave world from ~/.bashrc): only source ROS itself if nothing is sourced yet,
-# then ADD the experiment workspaces on top with --extend.
-if [[ -z "${ROS_DISTRO:-}" ]]; then
-  # shellcheck source=/dev/null
-  source "$ROS_SETUP"
-fi
+# shellcheck source=/dev/null
+source "$ROS_SETUP"
 for ws in "${WORKSPACES[@]}"; do
   # shellcheck source=/dev/null
   if [[ -f "$ws" ]]; then source "$ws" --extend; else echo "WARNING: workspace not found: $ws"; fi
 done
 set -u
-for pkg in cave_evaluation cave_exploration cave_multimodal_fusion cave_sensor_robot; do
-  rospack find "$pkg" >/dev/null 2>&1 || { echo "ROS package '$pkg' not found - check WORKSPACES in $CONF and run catkin_make"; exit 1; }
+echo "Packages used:"
+for pkg in gazebo_cave_world cave_sensor_robot champ_config a1_config lio_sam cave_evaluation cave_exploration cave_multimodal_fusion; do
+  if ! where="$(rospack find "$pkg" 2>/dev/null)"; then
+    echo "  ROS package '$pkg' not found - build the workspaces (bash setup_cave.sh in $REPO_ROOT)"; exit 1
+  fi
+  echo "  $pkg: $where"
 done
 for f in "$(rospack find cave_exploration)/scripts/mission_manager.py" \
          "$(rospack find cave_multimodal_fusion)/scripts/multimodal_mode_selector_experiment.py"; do

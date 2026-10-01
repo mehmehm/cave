@@ -14,31 +14,33 @@ saves the CSV, summary and bag, shuts everything down and starts the next run.
 
 ## One-time setup
 
-The files must be in the workspace you actually build. If you build
-`~/a1_ws` but keep the git repo in `~/cave/cave`, copy the edited files into
-`~/a1_ws/src/...` (or point `WORKSPACES` in `config/experiment.conf` at the
-workspace you build).
+Everything is built from this repo (e.g. `~/cave/cave`): `catkin_ws` and `a1_ws`.
 
 ```bash
-cd ~/a1_ws/src
-# Linux line endings + executable bits (needed if files came via Windows)
-sed -i 's/\r$//' cave_evaluation/scripts/run_experiments.sh cave_evaluation/config/experiment.conf \
-                 cave_exploration/scripts/mission_manager.py
-chmod +x cave_evaluation/scripts/run_experiments.sh cave_exploration/scripts/mission_manager.py
-cd ~/a1_ws && catkin_make && source devel/setup.bash
+cd ~/cave/cave
+bash setup_cave.sh
 ```
+
+`setup_cave.sh` downloads the third-party packages at the versions the repo
+records (including CHAMP's libchamp), applies LIO-SAM's Noetic fix, copies your
+A1 LIO-SAM settings to `config/lio_sam_cave_a1.yaml`, and builds both
+workspaces from scratch. It ends with `READY` or with the first build error.
+
+The runner loads ONLY this repo's two workspaces (`WORKSPACES` in
+`config/experiment.conf`), whatever your terminal has sourced, so an older copy
+elsewhere can never be picked up by mistake.
 
 Check CHAMP's speed limit: the follower asks for up to 0.35 m/s and 0.9 rad/s.
 If `a1_config/config/gait/gait.yaml` sets `max_linear_velocity_x` or
-`max_angular_velocity_z` lower, CHAMP clips the command; raise them or pass `-s`
-with a lower speed.
+`max_angular_velocity_z` lower, CHAMP clips the command; pass `-s` with a lower
+speed if needed.
 
 Close any Gazebo or roscore you have open first; the script stops them.
 
 ## Running
 
 ```bash
-cd ~/a1_ws/src/cave_evaluation/scripts
+cd ~/cave/cave/a1_ws/src/cave_evaluation/scripts
 bash run_experiments.sh -t 600 -c ADAPTIVE    # 10-minute test first
 bash run_experiments.sh                       # LIDAR_ONLY, RGB_LIDAR, THERMAL_LIDAR, ADAPTIVE once each
 bash run_experiments.sh -n 3                  # 3 repeats of every configuration
@@ -47,11 +49,27 @@ bash run_experiments.sh --no-bag              # skip rosbag recording
 ```
 
 The terminal prints one status line a minute and a result line per run.
+### Watching in RViz
+
+`--rviz` opens RViz with `rviz/experiment.rviz` (fixed frame `lio_odom`,
+camera following the A1). It shows the A1, the slope-safe traversable map,
+the multimodal voxel map, the live fused points coloured by the active mode
+(RGB colours, thermal JET colours, grey LiDAR-only), frontiers, the current
+goal (orange arrow; it jumps to the start point when the robot heads home),
+the planned path, the LIO-SAM trajectory, and the RGB and thermal camera
+images. RViz opens and closes with each run.
+
+To open it by hand on a running pipeline:
+
+```bash
+rosrun rviz rviz -d $(rospack find cave_evaluation)/rviz/experiment.rviz
+```
+
 Outputs:
 
-* `~/a1_ws/experiments/results/<config>_mixed_runNN.csv` and `_summary.json`
-* `~/a1_ws/experiments/bags/<config>_mixed_runNN.bag`
-* node output in `~/a1_ws/experiments/logs/<time>_<config>_runNN/`
+* `~/cave/cave/a1_ws/experiments/results/<config>_mixed_runNN.csv` and `_summary.json`
+* `~/cave/cave/a1_ws/experiments/bags/<config>_mixed_runNN.bag`
+* node output in `~/cave/cave/a1_ws/experiments/logs/<time>_<config>_runNN/`
   (`world.log`, `a1.log`, `localisation.log`, `pipeline.log`)
 
 Run numbers continue from the files already there, so pilot results are never

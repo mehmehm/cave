@@ -121,7 +121,26 @@ class FrontierDetector:
         self.active_recovery_goal = None
         self.visited_recovery_goals = []
         self.blacklist_lock = threading.Lock()
-        self.goal_blacklist = []
+        self.goal_blacklist = []        # (x, y, expiry, radius); expiry inf = permanent
+        # --- Never go back to areas the robot cannot traverse.
+        # A goal the planner rejects this many times is banned for the run.
+        self.permanent_after_rejections = max(1, int(
+            rospy.get_param("~permanent_after_rejections", 2)))
+        self.rejection_points = []
+        # Radius banned around a goal / a slope no-go area.
+        self.ban_radius = float(rospy.get_param("~ban_radius", 2.0))
+        self.no_go_ban_radius = float(rospy.get_param("~no_go_ban_radius", 2.5))
+        # Stuck watchdog: ban the active goal if the robot gets no closer to it
+        # by progress_distance within no_progress_seconds, or barely moves
+        # (less than progress_distance) within no_motion_seconds.
+        self.progress_distance = float(rospy.get_param("~progress_distance", 0.5))
+        self.no_progress_seconds = float(rospy.get_param("~no_progress_seconds", 150.0))
+        self.no_motion_seconds = float(rospy.get_param("~no_motion_seconds", 60.0))
+        self.watch_goal = None          # (x, y) being watched
+        self.watch_best = None
+        self.watch_best_time = None
+        self.watch_anchor = None        # robot position at last real motion
+        self.watch_anchor_time = None
 
         self.tf_buffer = tf2_ros.Buffer(
             cache_time=rospy.Duration(30.0)
@@ -168,6 +187,8 @@ class FrontierDetector:
 
         self.reached_sub = rospy.Subscriber('/cave/exploration/reached_goal', PoseStamped,
                                              self.reached_callback, queue_size=1)
+        self.no_go_sub = rospy.Subscriber('/cave/terrain/no_go', PoseStamped,
+                                          self.no_go_callback, queue_size=10)
         period = 1.0 / max(self.update_rate, 0.1)
 
         self.timer = rospy.Timer(
@@ -227,6 +248,12 @@ class FrontierDetector:
         rejected_x = message.pose.position.x
         rejected_y = message.pose.position.y
 
+        self.rejection_points.append((rejected_x, rejected_y))
+        times = sum(
+            1 for x, y in self.rejection_points
+            if math.hypot(x - rejected_x, y - rejected_y) < self.blacklist_radius
+        )
+        permanent = times >= self.permanent_after_rejections
         with self.blacklist_lock:
             self.goal_blacklist = [
                 item for item in self.goal_blacklist if item[2] > now
@@ -235,7 +262,8 @@ class FrontierDetector:
                 (
                     rejected_x,
                     rejected_y,
-                    now + max(self.blacklist_duration, 0.0),
+                    float("inf") if permanent else now + max(self.blacklist_duration, 0.0),
+                    self.ban_radius if permanent else self.blacklist_radius,
                 )
             )
 
@@ -254,12 +282,17 @@ class FrontierDetector:
             if math.hypot(active_x - rejected_x, active_y - rejected_y) < self.blacklist_radius:
                 self.active_frontier_goal = None
 
-        rospy.logwarn(
-            "Blacklisted rejected exploration goal (%.2f, %.2f) for %.1fs",
-            rejected_x,
-            rejected_y,
-            self.blacklist_duration,
-        )
+        if permanent:
+            rospy.logwarn(
+                "Goal (%.2f, %.2f) rejected %d times: banned for the rest of the run",
+                rejected_x, rejected_y, times)
+        else:
+            rospy.logwarn(
+                "Blacklisted rejected exploration goal (%.2f, %.2f) for %.1fs",
+                rejected_x,
+                rejected_y,
+                self.blacklist_duration,
+            )
 
     def is_blacklisted(self, world_x, world_y):
         now = rospy.Time.now().to_sec()
@@ -270,10 +303,67 @@ class FrontierDetector:
             entries = list(self.goal_blacklist)
 
         return any(
-            math.hypot(world_x - item_x, world_y - item_y)
-            < self.blacklist_radius
-            for item_x, item_y, _expiry in entries
+            math.hypot(world_x - item_x, world_y - item_y) < radius
+            for item_x, item_y, _expiry, radius in entries
         )
+
+    def ban(self, x, y, radius, reason):
+        """Exclude goals within radius of (x, y) for the rest of the run."""
+        with self.blacklist_lock:
+            self.goal_blacklist.append((x, y, float("inf"), radius))
+        for attribute in ("active_frontier_goal", "active_recovery_goal"):
+            active = getattr(self, attribute)
+            if active is not None and math.hypot(
+                    active["world_x"] - x, active["world_y"] - y) < radius:
+                setattr(self, attribute, None)
+        rospy.logwarn("Banned goals within %.1fm of (%.2f, %.2f) for the rest of the run: %s",
+                      radius, x, y, reason)
+
+    def no_go_callback(self, message):
+        """The slope guard found terrain the A1 cannot cross."""
+        x, y = message.pose.position.x, message.pose.position.y
+        self.ban(x, y, self.no_go_ban_radius, "steep terrain")
+        # The goal that led the robot there is not worth another attempt.
+        for attribute in ("active_frontier_goal", "active_recovery_goal"):
+            active = getattr(self, attribute)
+            if active is not None:
+                self.ban(active["world_x"], active["world_y"], self.ban_radius,
+                         "goal led into steep terrain at (%.2f, %.2f)" % (x, y))
+
+    def watch_progress(self, robot_x, robot_y, route_distance=None):
+        """Ban the active goal if the robot is not getting any closer to it.
+
+        Progress is measured along the route through known free space
+        (route_distance), so a long detour around a wall is not "no progress".
+        """
+        active = self.active_frontier_goal or self.active_recovery_goal
+        now = rospy.Time.now().to_sec()
+        if active is None:
+            self.watch_goal = None
+            return
+        goal = (active["world_x"], active["world_y"])
+        distance = route_distance(goal) if route_distance else None
+        if distance is None:
+            distance = math.hypot(goal[0] - robot_x, goal[1] - robot_y)
+        if self.watch_goal is None or math.hypot(
+                goal[0] - self.watch_goal[0], goal[1] - self.watch_goal[1]) > 0.3:
+            self.watch_goal = goal
+            self.watch_best, self.watch_best_time = distance, now
+            self.watch_anchor, self.watch_anchor_time = (robot_x, robot_y), now
+            return
+        if distance < self.watch_best - self.progress_distance:
+            self.watch_best, self.watch_best_time = distance, now
+        if math.hypot(robot_x - self.watch_anchor[0],
+                      robot_y - self.watch_anchor[1]) >= self.progress_distance:
+            self.watch_anchor, self.watch_anchor_time = (robot_x, robot_y), now
+        reason = None
+        if now - self.watch_best_time > self.no_progress_seconds:
+            reason = "no progress towards it for %.0fs" % (now - self.watch_best_time)
+        elif now - self.watch_anchor_time > self.no_motion_seconds:
+            reason = "robot has not moved for %.0fs" % (now - self.watch_anchor_time)
+        if reason:
+            self.ban(goal[0], goal[1], self.ban_radius, reason)
+            self.watch_goal = None
 
     @staticmethod
     def origin_yaw(message):      
@@ -524,6 +614,7 @@ class FrontierDetector:
                 remaining > self.recovery_goal_tolerance
                 and (active_grid_x, active_grid_y) in reachable_cells
                 and self.is_free(grid, active_grid_x, active_grid_y)
+                and not self.is_blacklisted(active_x, active_y)
             ):
                 candidate = dict(self.active_recovery_goal)
                 candidate["grid_x"] = active_grid_x
@@ -929,6 +1020,7 @@ class FrontierDetector:
         )
 
         if start_cell is None:
+            self.watch_progress(robot_x, robot_y)
             rospy.logwarn_throttle(
                 2.0,
                 "No free cell near the robot at grid (%d, %d)",
@@ -942,6 +1034,13 @@ class FrontierDetector:
             start_cell[0],
             start_cell[1]
         )
+
+        def route_distance(goal):
+            cell = self.world_to_grid(message, goal[0], goal[1])
+            steps = distances.get(tuple(cell))
+            return None if steps is None else steps * message.info.resolution
+
+        self.watch_progress(robot_x, robot_y, route_distance)
 
         clusters = self.cluster_frontiers(
             frontier_cells

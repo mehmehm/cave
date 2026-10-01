@@ -32,6 +32,13 @@
     <param name="completed_goal_hold_seconds" value="600.0"/> <!-- was 120: avoid revisiting -->
     <param name="completion_match_radius" value="1.35"/>
     <param name="recovery_information_radius" value="3.0"/>
+    <!-- Never go back to areas the A1 cannot traverse -->
+    <param name="permanent_after_rejections" value="2"/>   <!-- 2nd planner rejection = banned for the run -->
+    <param name="ban_radius" value="2.0"/>
+    <param name="no_go_ban_radius" value="2.5"/>            <!-- around slope-guard no-go areas -->
+    <param name="progress_distance" value="0.5"/>
+    <param name="no_progress_seconds" value="150.0"/>       <!-- no closer to the goal in 150 s: ban it -->
+    <param name="no_motion_seconds" value="60.0"/>          <!-- robot moved < 0.5 m in 60 s: ban the goal -->
 
   </node>
 </launch>

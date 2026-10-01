@@ -15,3 +15,5 @@ cat >> .gitignore <<'EOF'
 **/__pycache__/
 *.pyc
 EOF
+.setup_logs/
+.setup_backup/

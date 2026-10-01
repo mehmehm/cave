@@ -1,0 +1,77 @@
+{
+  "active_cloud_hz": 2.1717005600351724,
+  "active_cloud_messages": 3922,
+  "active_points": 15004422,
+  "condition": "MIXED",
+  "configuration": "RGB_LIDAR",
+  "distance_m": 518.7620634937264,
+  "duration_s": 1805.958,
+  "final_distance_to_start_m": 73.9498314382874,
+  "goals_reached": 0,
+  "metrics": {
+    "brightness": {
+      "count": 35815,
+      "max": 0.1730615794658661,
+      "mean": 0.1264422495523994,
+      "min": 0.06355361640453339
+    },
+    "rgb_quality": {
+      "count": 35812,
+      "max": 0.386976957321167,
+      "mean": 0.3486558023237269,
+      "min": 0.27473437786102295
+    },
+    "rgb_valid_fraction": {
+      "count": 3922,
+      "max": 0.25394418835639954,
+      "mean": 0.21717586489142598,
+      "min": 0.20194073021411896
+    },
+    "selected_valid_fraction": {
+      "count": 3922,
+      "max": 0.25394418835639954,
+      "mean": 0.21717586489142598,
+      "min": 0.20194073021411896
+    },
+    "selector_processing_ms": {
+      "count": 3922,
+      "max": 21.989412307739258,
+      "mean": 2.0318825038825294,
+      "min": 0.5022330284118652
+    },
+    "thermal_quality": {
+      "count": 3922,
+      "max": 0.25303396582603455,
+      "mean": 0.21695617585614407,
+      "min": 0.19583334028720856
+    },
+    "thermal_valid_fraction": {
+      "count": 3922,
+      "max": 0.25303396582603455,
+      "mean": 0.21695617585614407,
+      "min": 0.19583334028720856
+    },
+    "visible_voxel_count": {
+      "count": 3492,
+      "max": 26417.0,
+      "mean": 17140.828751431844,
+      "min": 882.0
+    },
+    "voxel_count": {
+      "count": 5643,
+      "max": 113919.0,
+      "mean": 71354.11217437533,
+      "min": 1733.0
+    }
+  },
+  "mission_events": [
+    "0.0 WAITING->EXPLORING start=(0.00, 0.00) frame=lio_odom",
+    "1585.4 EXPLORING->RETURNING reason=time budget distance_home=73.9m reserve=815s"
+  ],
+  "mission_phase": "RETURNING",
+  "mode_switches": 0,
+  "planner_failures": 33,
+  "plans_succeeded": 2362,
+  "returned_to_start": false,
+  "run_id": "run01"
+}

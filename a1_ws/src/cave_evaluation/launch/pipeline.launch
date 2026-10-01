@@ -16,7 +16,7 @@
   <!-- CHAMP's velocity input for the A1 (your terminal 13 used /a1/cmd_vel). -->
   <arg name="cmd_vel_topic" default="/a1/cmd_vel"/>
   <arg name="rviz" default="false"/>
-  <arg name="rviz_config" default="$(env HOME)/catkin_ws/pre-slam voxel map/trial1.rviz"/>
+  <arg name="rviz_config" default="$(find cave_evaluation)/rviz/experiment.rviz"/>
 
   <!-- Rosbag (your terminal 12). The directory must exist. -->
   <arg name="record_bag" default="true"/>

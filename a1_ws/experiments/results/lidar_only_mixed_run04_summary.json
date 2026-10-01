@@ -1,0 +1,77 @@
+{
+  "active_cloud_hz": 2.3271550207335228,
+  "active_cloud_messages": 5231,
+  "active_points": 19715010,
+  "condition": "MIXED",
+  "configuration": "LIDAR_ONLY",
+  "distance_m": 701.4722719605805,
+  "duration_s": 2247.809,
+  "final_distance_to_start_m": 32.38687387431263,
+  "goals_reached": 0,
+  "metrics": {
+    "brightness": {
+      "count": 44664,
+      "max": 0.3707224428653717,
+      "mean": 0.1261684403809152,
+      "min": 0.048212792724370956
+    },
+    "rgb_quality": {
+      "count": 44667,
+      "max": 0.6538973450660706,
+      "mean": 0.35324125667411743,
+      "min": 0.2423892766237259
+    },
+    "rgb_valid_fraction": {
+      "count": 5231,
+      "max": 0.25766175985336304,
+      "mean": 0.21756568609175503,
+      "min": 0.19386953115463257
+    },
+    "selected_valid_fraction": {
+      "count": 5231,
+      "max": 0.0,
+      "mean": 0.0,
+      "min": 0.0
+    },
+    "selector_processing_ms": {
+      "count": 5231,
+      "max": 60.82102584838867,
+      "mean": 2.2351453472701523,
+      "min": 0.5021100044250488
+    },
+    "thermal_quality": {
+      "count": 5231,
+      "max": 0.25539159774780273,
+      "mean": 0.21742993269327196,
+      "min": 0.19088540971279144
+    },
+    "thermal_valid_fraction": {
+      "count": 5231,
+      "max": 0.25539159774780273,
+      "mean": 0.21742993269327196,
+      "min": 0.19088540971279144
+    },
+    "visible_voxel_count": {
+      "count": 4348,
+      "max": 29322.0,
+      "mean": 18906.74425022999,
+      "min": 698.0
+    },
+    "voxel_count": {
+      "count": 7363,
+      "max": 126826.0,
+      "mean": 82742.00393861198,
+      "min": 1737.0
+    }
+  },
+  "mission_events": [
+    "0.0 WAITING->EXPLORING start=(0.00, -0.00) frame=lio_odom",
+    "1628.4 EXPLORING->RETURNING reason=time budget distance_home=70.1m reserve=773s"
+  ],
+  "mission_phase": "RETURNING",
+  "mode_switches": 0,
+  "planner_failures": 404,
+  "plans_succeeded": 2792,
+  "returned_to_start": false,
+  "run_id": "run04"
+}

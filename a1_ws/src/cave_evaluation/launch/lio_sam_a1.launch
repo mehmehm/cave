@@ -1,0 +1,6 @@
+<launch>
+  <!-- LIO-SAM with the A1 settings. setup_cave.sh copies your A1 settings
+       file (params_cave_a1.yaml) to cave_evaluation/config/lio_sam_cave_a1.yaml. -->
+  <rosparam file="$(find cave_evaluation)/config/lio_sam_cave_a1.yaml" command="load"/>
+  <include file="$(find lio_sam)/launch/include/module_loam.launch"/>
+</launch>

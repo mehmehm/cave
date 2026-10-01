@@ -17,5 +17,13 @@
     <param name="minimum_points_per_cell" value="5"/>
     <param name="point_skip" value="3"/>
     <param name="unsafe_cell_hold_seconds" value="15.0"/>
+    <!-- Permanent no-go areas (blocked for the rest of the run) -->
+    <param name="permanent_after_observations" value="4"/> <!-- steep in >= 4 updates and >= half of sightings -->
+    <param name="hazard_block_seconds" value="3.0"/>       <!-- held by a hazard this long: block the spot -->
+    <param name="no_go_radius" value="1.2"/>
+    <param name="maximum_body_pitch_deg" value="22.0"/>    <!-- same limits as the path follower -->
+    <param name="maximum_body_roll_deg" value="16.0"/>
+    <param name="trail_clear_radius" value="0.6"/>         <!-- the robot's own trail is never blocked -->
+    <param name="robot_clear_radius" value="0.8"/>
   </node>
 </launch>

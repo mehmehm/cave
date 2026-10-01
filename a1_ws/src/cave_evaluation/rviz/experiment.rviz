@@ -1,0 +1,167 @@
+Panels:
+  - Class: rviz/Displays
+    Name: Displays
+  - Class: rviz/Time
+    Name: Time
+    Experimental: false
+    SyncMode: 0
+    SyncSource: ""
+Visualization Manager:
+  Class: ""
+  Displays:
+    - Class: rviz/Grid
+      Name: Grid
+      Enabled: true
+      Value: true
+      Cell Size: 1
+      Plane Cell Count: 60
+      Color: 160; 160; 164
+      Alpha: 0.3
+      Reference Frame: <Fixed Frame>
+    - Class: rviz/RobotModel
+      Name: A1
+      Enabled: true
+      Value: true
+      Robot Description: /a1/robot_description
+      Alpha: 1
+      Visual Enabled: true
+      Collision Enabled: false
+    - Class: rviz/Map
+      Name: Traversable map (slope-safe)
+      Enabled: true
+      Value: true
+      Topic: /cave/map/slope_safe_projected_map
+      Color Scheme: map
+      Alpha: 0.6
+      Draw Behind: true
+    - Class: rviz/MarkerArray
+      Name: Multimodal voxel map
+      Enabled: true
+      Value: true
+      Marker Topic: /cave/map/multimodal_voxels
+      Queue Size: 2
+    - Class: rviz/PointCloud2
+      Name: Active fused points (mode colours)
+      Enabled: true
+      Value: true
+      Topic: /cave/fusion/active_points
+      Color Transformer: RGB8
+      Channel Name: rgb
+      Style: Points
+      Size (Pixels): 3
+      Size (m): 0.03
+      Decay Time: 0
+      Position Transformer: XYZ
+      Queue Size: 5
+      Use Fixed Frame: true
+      Alpha: 1
+    - Class: rviz/PointCloud2
+      Name: Raw LiDAR
+      Enabled: false
+      Value: false
+      Topic: /velodyne_points
+      Color Transformer: Intensity
+      Channel Name: intensity
+      Style: Points
+      Size (Pixels): 2
+      Size (m): 0.02
+      Decay Time: 0
+      Position Transformer: XYZ
+      Queue Size: 5
+      Use Fixed Frame: true
+      Alpha: 1
+    - Class: rviz/MarkerArray
+      Name: Frontiers
+      Enabled: true
+      Value: true
+      Marker Topic: /cave/exploration/frontiers
+      Queue Size: 2
+    - Class: rviz/Pose
+      Name: Current goal (frontier, or home when returning)
+      Enabled: true
+      Value: true
+      Topic: /cave/mission/goal
+      Shape: Arrow
+      Color: 255; 140; 0
+      Alpha: 1
+      Shaft Length: 0.6
+      Shaft Radius: 0.08
+      Head Length: 0.3
+      Head Radius: 0.18
+    - Class: rviz/Path
+      Name: Planned path
+      Enabled: true
+      Value: true
+      Topic: /cave/exploration/path
+      Color: 0; 200; 255
+      Line Style: Billboards
+      Line Width: 0.06
+      Alpha: 1
+      Buffer Length: 1
+    - Class: rviz/Odometry
+      Name: Trajectory (LIO-SAM)
+      Enabled: true
+      Value: true
+      Topic: /lio_sam/mapping/odometry
+      Keep: 2000
+      Position Tolerance: 0.3
+      Angle Tolerance: 6.28
+      Shape:
+        Value: Arrow
+        Color: 255; 40; 120
+        Alpha: 1
+        Shaft Length: 0.15
+        Shaft Radius: 0.03
+        Head Length: 0.06
+        Head Radius: 0.05
+      Covariance:
+        Value: false
+    - Class: rviz/Image
+      Name: RGB camera
+      Enabled: true
+      Value: true
+      Image Topic: /rgb_camera/image_raw
+      Transport Hint: raw
+      Normalize Range: true
+      Queue Size: 2
+    - Class: rviz/Image
+      Name: Thermal camera
+      Enabled: true
+      Value: true
+      Image Topic: /thermal_camera/image_raw
+      Transport Hint: raw
+      Normalize Range: true
+      Queue Size: 2
+  Enabled: true
+  Global Options:
+    Background Color: 30; 30; 34
+    Default Light: true
+    Fixed Frame: lio_odom
+    Frame Rate: 20
+  Name: root
+  Tools:
+    - Class: rviz/Interact
+      Hide Inactive Objects: true
+    - Class: rviz/MoveCamera
+    - Class: rviz/Select
+    - Class: rviz/FocusCamera
+    - Class: rviz/Measure
+  Value: true
+  Views:
+    Current:
+      Class: rviz/ThirdPersonFollower
+      Name: Follow A1
+      Target Frame: base
+      Distance: 12
+      Pitch: 0.75
+      Yaw: 3.14
+      Focal Point: 0; 0; 0
+      Near Clip Distance: 0.01
+    Saved: ~
+Window Geometry:
+  Displays:
+    collapsed: false
+  Width: 1600
+  Height: 950
+  Hide Left Dock: false
+  Hide Right Dock: true
