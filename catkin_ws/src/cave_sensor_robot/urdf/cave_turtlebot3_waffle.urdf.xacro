@@ -1,0 +1,203 @@
+<?xml version="1.0"?>
+<robot name="cave_turtlebot3_waffle" xmlns:xacro="http://ros.org/wiki/xacro">
+
+  <!-- Load the real TurtleBot3 Waffle robot description directly -->
+  <xacro:include filename="$(find turtlebot3_description)/urdf/turtlebot3_waffle.urdf.xacro"/>
+
+  <!-- ========================= -->
+  <!-- RGB CAMERA -->
+  <!-- ========================= -->
+
+  <link name="rgb_camera_link">
+    <visual>
+      <geometry>
+        <box size="0.05 0.05 0.05"/>
+      </geometry>
+      <material name="rgb_blue">
+        <color rgba="0 0 1 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="rgb_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="rgb_camera_link"/>
+    <origin xyz="0.18 0 0.22" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="rgb_camera_link">
+    <sensor type="camera" name="rgb_camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <visualize>true</visualize>
+
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>R8G8B8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>50.0</far>
+        </clip>
+      </camera>
+
+      <plugin name="rgb_camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>30.0</updateRate>
+        <cameraName>rgb_camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>rgb_camera_optical_frame</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+
+  <!-- ========================= -->
+  <!-- THERMAL CAMERA PLACEHOLDER -->
+  <!-- grayscale camera stream.
+       not physically accurate thermal radiation. -->
+  <!-- ========================= -->
+
+  <link name="thermal_camera_link">
+    <visual>
+      <geometry>
+        <box size="0.04 0.04 0.04"/>
+      </geometry>
+      <material name="thermal_red">
+        <color rgba="1 0 0 1"/>
+      </material>
+    </visual>
+  </link>
+
+  <joint name="thermal_camera_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="thermal_camera_link"/>
+    <origin xyz="0.18 0.07 0.22" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="thermal_camera_link">
+    <sensor type="camera" name="thermal_camera">
+      <always_on>true</always_on>
+      <update_rate>15</update_rate>
+      <visualize>true</visualize>
+
+      <camera>
+        <horizontal_fov>1.3962634</horizontal_fov>
+        <image>
+          <width>640</width>
+          <height>480</height>
+          <format>L8</format>
+        </image>
+        <clip>
+          <near>0.02</near>
+          <far>50.0</far>
+        </clip>
+      </camera>
+
+      <plugin name="thermal_camera_controller" filename="libgazebo_ros_camera.so">
+        <alwaysOn>true</alwaysOn>
+        <updateRate>15.0</updateRate>
+        <cameraName>thermal_camera</cameraName>
+        <imageTopicName>image_raw</imageTopicName>
+        <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+        <frameName>thermal_camera_optical_frame</frameName>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+
+  <!-- ========================= -->
+  <!-- 3D VELODYNE LIDAR -->
+  <!-- ========================= -->
+
+  <link name="velodyne_link">
+    <visual>
+      <geometry>
+        <cylinder radius="0.06" length="0.08"/>
+      </geometry>
+      <material name="lidar_black">
+        <color rgba="0 0 0 1"/>
+      </material>
+    </visual>
+
+    <collision>
+      <geometry>
+        <cylinder radius="0.06" length="0.08"/>
+      </geometry>
+    </collision>
+  </link>
+
+  <joint name="velodyne_joint" type="fixed">
+    <parent link="base_link"/>
+    <child link="velodyne_link"/>
+    <origin xyz="0.10 0 0.30" rpy="0 0 0"/>
+  </joint>
+
+  <gazebo reference="velodyne_link">
+    <sensor type="ray" name="velodyne_3d_lidar">
+      <always_on>true</always_on>
+      <visualize>true</visualize>
+      <update_rate>10</update_rate>
+
+      <ray>
+        <scan>
+          <horizontal>
+            <samples>720</samples>
+            <resolution>1</resolution>
+            <min_angle>-3.14159265</min_angle>
+            <max_angle>3.14159265</max_angle>
+          </horizontal>
+
+          <vertical>
+            <samples>32</samples>
+            <resolution>1</resolution>
+            <min_angle>-0.523599</min_angle>
+            <max_angle>0.261799</max_angle>
+          </vertical>
+        </scan>
+
+        <range>
+          <min>0.2</min>
+          <max>30.0</max>
+          <resolution>0.01</resolution>
+        </range>
+
+        <noise>
+          <type>gaussian</type>
+          <mean>0.0</mean>
+          <stddev>0.01</stddev>
+        </noise>
+      </ray>
+
+      <plugin name="velodyne_controller" filename="libgazebo_ros_velodyne_laser.so">
+        <topicName>/velodyne_points</topicName>
+        <frameName>velodyne_link</frameName>
+        <min_range>0.2</min_range>
+        <max_range>30.0</max_range>
+        <gaussianNoise>0.01</gaussianNoise>
+      </plugin>
+    </sensor>
+  </gazebo>
+
+  <!-- ========================= -->
+  <!-- RGB optical frame -->
+  <!-- ========================= -->
+  <link name = "rgb_camera_optical_frame" />
+
+  <joint name = "rgb_camera_optical_joint" type="fixed">
+    <parent link="rgb_camera_link"/>
+    <child link="rgb_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+
+  <link name = "thermal_camera_optical_frame" />
+  <joint name = "thermal_camera_optical_joint" type="fixed">
+    <parent link="thermal_camera_link"/>
+    <child link="thermal_camera_optical_frame"/>
+    <origin xyz="0 0 0" rpy="-1.57079632679 0 -1.57079632679"/>
+  </joint>
+</robot>

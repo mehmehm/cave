@@ -1,0 +1,29 @@
+<launch>
+  <arg name="input_topic" default="/cave/fusion/active_points"/>
+  <arg name="output_topic" default="/cave/map/multimodal_voxels"/>
+  <arg name="fixed_frame" default="lio_odom"/>
+  <arg name="resolution" default="0.30"/>
+  <arg name="publish_rate" default="1.0"/>
+  <arg name="maximum_observations" default="20"/>
+  <arg name="maximum_voxels" default="500000"/>
+
+  <!-- RViz-only slice. The complete voxel map remains stored internally. -->
+  <arg name="visualization_min_z" default="-0.40"/>
+  <arg name="visualization_max_z" default="1.30"/>
+
+  <node pkg="cave_multimodal_fusion"
+        type="multimodal_voxel_accumulator_clean.py"
+        name="multimodal_voxel_accumulator"
+        output="screen"
+        required="true">
+    <param name="input_topic" value="$(arg input_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="fixed_frame" value="$(arg fixed_frame)"/>
+    <param name="resolution" value="$(arg resolution)"/>
+    <param name="publish_rate" value="$(arg publish_rate)"/>
+    <param name="maximum_observations" value="$(arg maximum_observations)"/>
+    <param name="maximum_voxels" value="$(arg maximum_voxels)"/>
+    <param name="visualization_min_z" value="$(arg visualization_min_z)"/>
+    <param name="visualization_max_z" value="$(arg visualization_max_z)"/>
+  </node>
+</launch>

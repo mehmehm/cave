@@ -1,0 +1,17 @@
+<launch>
+  <arg name="configuration" default="ADAPTIVE"/>
+  <arg name="condition" default="MIXED"/>
+  <arg name="run_id" default="run01"/>
+  <arg name="output_directory" default="$(env HOME)/a1_ws/experiments/results"/>
+
+  <node pkg="cave_multimodal_fusion"
+        type="experiment_metrics_logger.py"
+        name="experiment_metrics_logger"
+        output="screen"
+        required="true">
+    <param name="configuration" value="$(arg configuration)"/>
+    <param name="condition" value="$(arg condition)"/>
+    <param name="run_id" value="$(arg run_id)"/>
+    <param name="output_directory" value="$(arg output_directory)"/>
+  </node>
+</launch>

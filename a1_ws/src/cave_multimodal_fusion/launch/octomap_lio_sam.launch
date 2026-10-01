@@ -1,0 +1,41 @@
+<launch>
+
+  <!-- 3-D voxel mapping from LIO-SAM -->
+  <node pkg="octomap_server"
+        type="octomap_server_node"
+        name="octomap_server"
+        output="screen">
+
+    <!-- Preserve the complete 3-D OctoMap, but only use the
+     robot-height collision band for the 2-D projected map. -->
+    <param name="occupancy_min_z" value="-0.15"/>
+    <param name="occupancy_max_z" value="0.65"/>
+
+    <!-- Remove isolated occupied voxels. -->
+    <param name="filter_speckles" value="true"/>
+
+    <!-- Keep disabled initially because the cave floor is uneven. -->
+    <param name="filter_ground" value="false"/>
+
+    <!-- Rebuild the complete 2-D projection after every update. -->
+    <param name="incremental_2D_projection" value="false"/>
+    <!-- LIO-SAM global odometry frame -->
+    <param name="frame_id" value="lio_odom"/>
+
+    <!-- 10 cm voxels -->
+    <param name="resolution" value="0.30"/>
+
+    <!-- Suitable initial range for the cave -->
+    <param name="sensor_model/max_range" value="30.0"/>
+
+    <!-- Initial vertical limits -->
+    <param name="pointcloud_min_z" value="-2.0"/>
+    <param name="pointcloud_max_z" value="10.0"/>
+
+    <!-- Correct LIO-SAM point-cloud input -->
+    <remap from="cloud_in"
+           to="/lio_sam/deskew/cloud_deskewed"/>
+
+  </node>
+
+</launch>

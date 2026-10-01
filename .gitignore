@@ -1,0 +1,17 @@
+cat >> .gitignore <<'EOF'
+
+# Catkin-generated directories
+**/build/
+**/devel/
+**/install/
+**/logs/
+**/.catkin_tools/
+
+# ROS recordings
+*.bag
+*.bag.active
+
+# Python-generated files
+**/__pycache__/
+*.pyc
+EOF

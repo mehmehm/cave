@@ -1,0 +1,47 @@
+<launch>
+
+  <!-- Input from the RGB/thermal mode selector -->
+  <arg name="input_topic"
+       default="/cave/fusion/active_points"/>
+
+  <!-- Accumulated voxel-map output -->
+  <arg name="output_topic"
+       default="/cave/map/multimodal_voxels"/>
+
+  <!-- Global frame provided by LIO-SAM -->
+  <arg name="fixed_frame"
+       default="lio_odom"/>
+
+  <!-- Voxel size in metres -->
+  <arg name="resolution"
+       default="0.30"/>
+
+  <node pkg="cave_multimodal_fusion"
+        type="multimodal_voxel_accumulator.py"
+        name="multimodal_voxel_accumulator"
+        output="screen">
+
+    <param name="input_topic"
+           value="$(arg input_topic)"/>
+
+    <param name="output_topic"
+           value="$(arg output_topic)"/>
+
+    <param name="fixed_frame"
+           value="$(arg fixed_frame)"/>
+
+    <param name="resolution"
+           value="$(arg resolution)"/>
+
+    <param name="publish_rate"
+           value="2.0"/>
+
+    <param name="maximum_observations"
+           value="2000"/>
+
+    <param name="maximum_voxels"
+           value="500000"/>
+
+  </node>
+
+</launch>

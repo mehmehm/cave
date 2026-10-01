@@ -1,0 +1,70 @@
+{
+  "active_cloud_hz": 2.594298006066666,
+  "active_cloud_messages": 2470,
+  "active_points": 9411353,
+  "condition": "MIXED",
+  "configuration": "ADAPTIVE",
+  "distance_m": 211.3241508764448,
+  "duration_s": 952.088,
+  "goals_reached": 0,
+  "metrics": {
+    "brightness": {
+      "count": 20421,
+      "max": 0.1610821783542633,
+      "mean": 0.12702719143332641,
+      "min": 0.06857891380786896
+    },
+    "rgb_quality": {
+      "count": 20423,
+      "max": 0.4191122353076935,
+      "mean": 0.35144446884996833,
+      "min": 0.28380724787712097
+    },
+    "rgb_valid_fraction": {
+      "count": 2470,
+      "max": 0.25127437710762024,
+      "mean": 0.21813061298267078,
+      "min": 0.20755209028720856
+    },
+    "selected_valid_fraction": {
+      "count": 2470,
+      "max": 0.25059595704078674,
+      "mean": 0.21750010047484988,
+      "min": 0.20624999701976776
+    },
+    "selector_processing_ms": {
+      "count": 2470,
+      "max": 1570.840576171875,
+      "mean": 406.13775459938205,
+      "min": 248.14625549316406
+    },
+    "thermal_quality": {
+      "count": 2470,
+      "max": 0.25059595704078674,
+      "mean": 0.21750010047484988,
+      "min": 0.20624999701976776
+    },
+    "thermal_valid_fraction": {
+      "count": 2470,
+      "max": 0.25059595704078674,
+      "mean": 0.21750010047484988,
+      "min": 0.20624999701976776
+    },
+    "visible_voxel_count": {
+      "count": 1906,
+      "max": 5263.0,
+      "mean": 4362.560335781742,
+      "min": 984.0
+    },
+    "voxel_count": {
+      "count": 3413,
+      "max": 21046.0,
+      "mean": 17773.543217111044,
+      "min": 2613.0
+    }
+  },
+  "mode_switches": 0,
+  "planner_failures": 17,
+  "plans_succeeded": 389,
+  "run_id": "run01"
+}

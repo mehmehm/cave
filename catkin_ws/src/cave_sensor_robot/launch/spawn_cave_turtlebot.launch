@@ -1,0 +1,36 @@
+<launch>
+  <!-- Robot spawn position -->
+  <arg name="x" default="2.698025"/>
+  <arg name="y" default="-20.647276"/>
+  <arg name="z" default="0.048994"/>
+  <arg name="yaw" default="-3.007777"/>
+
+  <!-- Load the robot URDF into the parameter server -->
+  <param
+    name="robot_description"
+    command="$(find xacro)/xacro '$(find cave_sensor_robot)/urdf/cave_turtlebot3_waffle.urdf.xacro'"
+  />
+
+  <!-- Publish the robot's TF frames -->
+  <node
+    pkg="robot_state_publisher"
+    type="robot_state_publisher"
+    name="robot_state_publisher"
+    output="screen"
+  />
+
+  <!-- Spawn the robot into the already-running Gazebo world -->
+  <node
+    pkg="gazebo_ros"
+    type="spawn_model"
+    name="spawn_cave_turtlebot"
+    output="screen"
+    args="-urdf
+          -model cave_turtlebot3_waffle
+          -param robot_description
+          -x $(arg x)
+          -y $(arg y)
+          -z $(arg z)
+          -Y $(arg yaw)"
+  />
+</launch>

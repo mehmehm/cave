@@ -1,0 +1,28 @@
+<launch>
+  <arg name="map_topic"
+       default="/projected_map"/>
+
+  <arg name="odom_topic"
+       default="/lio_sam/mapping/odometry"/>
+
+  <node pkg="cave_exploration"
+        type="frontier_detector.py"
+        name="frontier_detector"
+        output="screen">
+
+    <param name="map_topic" value="$(arg map_topic)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="frontier_topic" value="/cave/exploration/frontiers"/>
+    <param name="best_frontier_topic" value="/cave/exploration/best_frontier"/>
+    <param name="update_rate" value="1.0"/>
+    <param name="free_threshold" value="20"/>
+    <param name="minimum_cluster_size" value="3"/>
+    <param name="distance_weight" value="0.5"/>
+    <param name="enable_recovery_goal" value="true"/>
+    <param name="minimum_recovery_distance" value="1.0"/>
+    <param name="recovery_goal_tolerance" value="0.50"/>
+    <param name="recovery_clearance_cells" value="3"/>
+    <param name="recovery_revisit_radius" value="1.0"/>
+
+  </node>
+</launch>

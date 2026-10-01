@@ -1,0 +1,37 @@
+<launch>
+  <arg name="image_topic"
+       default="/rgb_camera/image_raw"/>
+
+  <arg name="camera_info_topic"
+       default="/rgb_camera/camera_info"/>
+
+  <arg name="lidar_topic"
+       default="/velodyne_points"/>
+
+  <arg name="output_topic"
+       default="/cave/fusion/rgb_lidar_points"/>
+
+  <arg name="point_skip"
+       default="3"/>
+
+  <node pkg="cave_multimodal_fusion"
+        type="rgb_lidar_projection.py"
+        name="rgb_lidar_projection"
+        output="screen">
+
+    <param name="image_topic"
+           value="$(arg image_topic)"/>
+
+    <param name="camera_info_topic"
+           value="$(arg camera_info_topic)"/>
+
+    <param name="lidar_topic"
+           value="$(arg lidar_topic)"/>
+
+    <param name="output_topic"
+           value="$(arg output_topic)"/>
+
+    <param name="point_skip"
+           value="$(arg point_skip)"/>
+  </node>
+</launch>

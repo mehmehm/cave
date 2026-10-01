@@ -1,0 +1,21 @@
+<launch>
+  <!-- Launch after Gazebo, LIO-SAM, and /projected_map; before exploration. -->
+  <arg name="map_topic" default="/projected_map"/>
+  <arg name="cloud_topic" default="/velodyne_points"/>
+  <arg name="odom_topic" default="/lio_sam/mapping/odometry"/>
+  <arg name="output_topic" default="/cave/map/slope_safe_projected_map"/>
+  <arg name="max_slope_degrees" default="22.0"/>
+
+  <node pkg="cave_exploration" type="terrain_slope_guard.py"
+        name="terrain_slope_guard" output="screen" required="true">
+    <param name="map_topic" value="$(arg map_topic)"/>
+    <param name="cloud_topic" value="$(arg cloud_topic)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="max_slope_degrees" value="$(arg max_slope_degrees)"/>
+    <param name="max_grid_resolution" value="0.55"/>
+    <param name="minimum_points_per_cell" value="5"/>
+    <param name="point_skip" value="3"/>
+    <param name="unsafe_cell_hold_seconds" value="15.0"/>
+  </node>
+</launch>

@@ -1,0 +1,47 @@
+<launch>
+  <arg name="map_topic" default="/cave/map/slope_safe_projected_map"/>
+  <arg name="odom_topic" default="/lio_sam/mapping/odometry"/>
+  <arg name="goal_topic" default="/cave/exploration/best_frontier"/>
+  <arg name="rejected_goal_topic" default="/cave/exploration/rejected_goal"/>
+  <arg name="path_topic" default="/cave/exploration/path"/>
+  <arg name="cmd_vel_topic" default="/cmd_vel"/>
+
+  <node pkg="cave_exploration"
+        type="astar_planner.py"
+        name="astar_planner"
+        output="screen">
+    <param name="map_topic" value="$(arg map_topic)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="goal_topic" value="$(arg goal_topic)"/>
+    <param name="rejected_goal_topic" value="$(arg rejected_goal_topic)"/>
+    <param name="path_topic" value="$(arg path_topic)"/>
+    <param name="free_threshold" value="20"/>
+    <param name="robot_radius" value="0.30"/>
+    <param name="nearest_free_radius" value="1.0"/>
+    <param name="replan_rate" value="1.0"/>
+    <param name="goal_timeout" value="5.0"/>
+    <param name="route_consistency_penalty" value="0.35"/>
+    <param name="maximum_expansions" value="300000"/>
+    <param name="minimum_fallback_path_length" value="1.0"/>
+    <param name="maximum_fallback_goal_distance" value="1.0"/>
+  </node>
+
+  <node pkg="cave_exploration"
+        type="path_follower.py"
+        name="path_follower"
+        output="screen">
+    <param name="path_topic" value="$(arg path_topic)"/>
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
+    <param name="control_rate" value="10.0"/>
+    <param name="lookahead_distance" value="0.50"/>
+    <param name="goal_tolerance" value="0.30"/>
+    <param name="maximum_linear_speed" value="0.18"/>
+    <param name="maximum_angular_speed" value="0.45"/>
+    <param name="angular_gain" value="1.4"/>
+    <param name="rotate_in_place_angle" value="0.65"/>
+    <param name="slowdown_distance" value="0.45"/>
+    <param name="path_timeout" value="5.0"/>
+    <param name="odom_timeout" value="1.0"/>
+  </node>
+</launch>

@@ -1,0 +1,123 @@
+<launch>
+
+  <!-- ===================================================== -->
+  <!-- A1 cave configuration -->
+  <!-- ===================================================== -->
+
+  <arg name="robot_name" default="a1"/>
+
+  <arg name="x" default="2.698025"/>
+  <arg name="y" default="-20.647276"/>
+  <arg name="z" default="0.4" />
+  <arg name="yaw" default="-3.007777"/>
+
+  <!-- Sensor-equipped A1 -->
+  <arg name="description_file"
+       default="$(find cave_sensor_robot)/urdf/cave_a1.urdf"/>
+
+  <!-- Original A1 ros_control configuration -->
+  <arg name="ros_control_file"
+       default="$(find a1_config)/config/ros_control/ros_control.yaml"/>
+
+  <param name="use_sim_time" value="true"/>
+
+
+  <!-- ===================================================== -->
+  <!-- CHAMP bringup -->
+  <!-- ===================================================== -->
+
+  <include file="$(find a1_config)/launch/bringup.launch">
+
+    <arg name="robot_name"
+         value="$(arg robot_name)"/>
+
+    <arg name="description_file"
+         value="$(arg description_file)"/>
+
+    <arg name="gazebo"
+         value="true"/>
+
+    <arg name="rviz"
+         value="false"/>
+
+    <arg name="joint_controller_topic"
+         value="joint_group_position_controller/command"/>
+
+    <arg name="hardware_connected"
+         value="false"/>
+
+    <arg name="publish_joint_control"
+         value="true"/>
+
+    <arg name="publish_foot_contacts"
+         value="false"/>
+
+    <arg name="close_loop_odom"
+         value="true"/>
+
+  </include>
+
+
+  <!-- ===================================================== -->
+  <!-- Spawn A1 into ALREADY RUNNING cave Gazebo -->
+  <!-- ===================================================== -->
+
+  <group ns="$(arg robot_name)">
+
+    <!-- Spawn URDF -->
+    <node
+        name="urdf_spawner"
+        pkg="gazebo_ros"
+        type="spawn_model"
+        output="screen"
+        args="-urdf
+              -model $(arg robot_name)
+              -param robot_description
+              -robot_namespace $(arg robot_name)
+              -x $(arg x)
+              -y $(arg y)
+              -z $(arg z)
+              -Y $(arg yaw)" />
+
+
+    <!-- Load ros_control settings -->
+    <rosparam
+        file="$(arg ros_control_file)"
+        command="load"/>
+
+
+    <!--
+         IMPORTANT:
+         Only load the trajectory controller.
+
+         Do NOT load joint_states_controller here because
+         CHAMP already publishes /a1/joint_states.
+         Loading both was causing duplicate joint states,
+         which then produced TF_REPEATED_DATA warnings.
+    -->
+    <node
+        name="controller_spawner"
+        pkg="controller_manager"
+        type="spawner"
+        respawn="false"
+        output="screen"
+        args="joint_group_position_controller" />
+
+
+    <!-- Gazebo foot-contact interface -->
+    <node
+        pkg="champ_gazebo"
+        name="contact_sensor"
+        type="contact_sensor"
+        output="screen"/>
+
+     <node pkg="topic_tools"
+      type="relay"
+      name="imu_topic_relay"
+      args="/a1/trunk_imu /a1/imu/data"
+      output="screen"/>
+
+  </group>
+  
+
+</launch>

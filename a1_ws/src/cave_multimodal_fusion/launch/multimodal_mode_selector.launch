@@ -1,0 +1,20 @@
+<launch>
+  <arg name="rgb_image_topic" default="/rgb_camera/image_raw"/>
+  <arg name="fused_cloud_topic" default="/cave/fusion/rgb_thermal_lidar_points"/>
+  <arg name="output_topic" default="/cave/fusion/active_points"/>
+  <arg name="dark_threshold" default="0.15"/>
+  <arg name="light_threshold" default="0.20"/>
+  <arg name="frames_to_switch" default="10"/>
+  <arg name="max_image_age" default="2.0"/>
+
+  <node pkg="cave_multimodal_fusion" type="multimodal_mode_selector.py"
+        name="multimodal_mode_selector" output="screen" required="true">
+    <param name="rgb_image_topic" value="$(arg rgb_image_topic)"/>
+    <param name="fused_cloud_topic" value="$(arg fused_cloud_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+    <param name="dark_threshold" value="$(arg dark_threshold)"/>
+    <param name="light_threshold" value="$(arg light_threshold)"/>
+    <param name="frames_to_switch" value="$(arg frames_to_switch)"/>
+    <param name="max_image_age" value="$(arg max_image_age)"/>
+  </node>
+</launch>

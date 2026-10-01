@@ -1,0 +1,36 @@
+<launch>
+  <arg name="rgb_image_topic" default="/rgb_camera/image_raw"/>
+  <arg name="rgb_info_topic" default="/rgb_camera/camera_info"/>
+  <arg name="thermal_image_topic" default="/thermal_camera/image_raw"/>
+  <arg name="thermal_info_topic" default="/thermal_camera/camera_info"/>
+  <arg name="lidar_topic" default="/velodyne_points"/>
+
+  <arg name="output_topic"
+       default="/cave/fusion/rgb_thermal_lidar_points"/>
+
+  <arg name="fixed_frame" default="lio_odom"/>
+  <arg name="point_skip" default="3"/>
+  <arg name="sync_queue_size" default="30"/>
+  <arg name="sync_slop" default="0.08"/>
+  <arg name="tf_timeout" default="0.20"/>
+
+  <node pkg="cave_multimodal_fusion"
+        type="rgb_thermal_lidar_sync.py"
+        name="rgb_thermal_lidar_sync"
+        output="screen">
+
+    <param name="rgb_image_topic" value="$(arg rgb_image_topic)"/>
+    <param name="rgb_info_topic" value="$(arg rgb_info_topic)"/>
+    <param name="thermal_image_topic" value="$(arg thermal_image_topic)"/>
+    <param name="thermal_info_topic" value="$(arg thermal_info_topic)"/>
+    <param name="lidar_topic" value="$(arg lidar_topic)"/>
+    <param name="output_topic" value="$(arg output_topic)"/>
+
+    <param name="fixed_frame" value="$(arg fixed_frame)"/>
+    <param name="point_skip" value="$(arg point_skip)"/>
+    <param name="sync_queue_size" value="$(arg sync_queue_size)"/>
+    <param name="sync_slop" value="$(arg sync_slop)"/>
+    <param name="tf_timeout" value="$(arg tf_timeout)"/>
+    <param name="keep_unassociated_points" value="true"/>
+  </node>
+</launch>
