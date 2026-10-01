@@ -71,8 +71,13 @@ done
 # ---------------------------------------------------------------- environment
 # ROS setup files reference unset variables, so relax 'set -u' while sourcing.
 set +u
-# shellcheck source=/dev/null
-source "$ROS_SETUP"
+# Keep whatever this terminal already has (e.g. the workspace that holds the
+# cave world from ~/.bashrc): only source ROS itself if nothing is sourced yet,
+# then ADD the experiment workspaces on top with --extend.
+if [[ -z "${ROS_DISTRO:-}" ]]; then
+  # shellcheck source=/dev/null
+  source "$ROS_SETUP"
+fi
 for ws in "${WORKSPACES[@]}"; do
   # shellcheck source=/dev/null
   if [[ -f "$ws" ]]; then source "$ws" --extend; else echo "WARNING: workspace not found: $ws"; fi
@@ -92,6 +97,21 @@ eval "$(tr -d '\r' < "$CONF" | grep -E '^LIO_SAM_LAUNCH=' | tail -n 1)"
 
 if [[ -z "${WORLD_CMD// }" ]]; then
   echo "Set WORLD_CMD in $CONF to the command that opens the cave world."; exit 1
+fi
+# If WORLD_CMD is 'roslaunch <package> <file>', check both can be found now
+# rather than failing silently in world.log.
+read -r -a _world <<< "$WORLD_CMD"
+if [[ "${_world[0]:-}" == "roslaunch" && -n "${_world[2]:-}" && "${_world[1]}" != *.launch ]]; then
+  if ! _world_dir="$(rospack find "${_world[1]}" 2>/dev/null)"; then
+    echo "Cannot find ROS package '${_world[1]}' used by WORLD_CMD."
+    echo "In a terminal where '$WORLD_CMD' works, run:  rospack find ${_world[1]}"
+    echo "then add <that workspace>/devel/setup.bash to WORKSPACES in $CONF,"
+    echo "or start this script from that terminal."
+    exit 1
+  fi
+  if [[ -z "$(find -L "$_world_dir" -name "${_world[2]}" -print -quit 2>/dev/null)" ]]; then
+    echo "Package '${_world[1]}' ($_world_dir) has no launch file '${_world[2]}'."; exit 1
+  fi
 fi
 if [[ ! -f "$LIO_SAM_LAUNCH" ]]; then
   echo "LIO-SAM launch file not found: '$LIO_SAM_LAUNCH' (set LIO_SAM_LAUNCH in $CONF)"; exit 1
