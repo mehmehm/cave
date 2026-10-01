@@ -93,7 +93,9 @@ class AStarPlanner:
             self.goal_topic, PoseStamped, self.goal_callback, queue_size=1
         )
 
-        self.goal_status_sub = rospy.Subscriber('/cave/exploration/goal_status', String,
+        self.goal_status_topic = rospy.get_param(
+            "~goal_status_topic", "/cave/exploration/goal_status")
+        self.goal_status_sub = rospy.Subscriber(self.goal_status_topic, String,
                                                 self.goal_status_callback, queue_size=1)
         period = 1.0 / max(self.replan_rate, 0.1)
         self.timer = rospy.Timer(rospy.Duration(period), self.timer_callback)

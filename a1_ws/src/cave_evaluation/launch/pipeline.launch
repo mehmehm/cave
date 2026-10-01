@@ -1,0 +1,48 @@
+<launch>
+  <!-- Stage 3: everything from mapping to metrics, for ONE experiment run.
+       roslaunch cave_evaluation pipeline.launch configuration:=ADAPTIVE run_id:=run01
+       The launch ends by itself when the mission manager finishes
+       (robot back at start, or the 40 min cap), and the logger then writes
+       <configuration>_<condition>_<run_id>.csv and _summary.json. -->
+  <arg name="configuration" default="ADAPTIVE"/>   <!-- ADAPTIVE | RGB_LIDAR | THERMAL_LIDAR | LIDAR_ONLY -->
+  <arg name="condition" default="MIXED"/>
+  <arg name="run_id" default="run01"/>
+  <arg name="output_directory" default="$(env HOME)/a1_ws/experiments/results"/>
+  <arg name="max_run_seconds" default="2400"/>
+  <arg name="max_linear_speed" default="0.35"/>
+  <arg name="threshold_mode" default="fixed"/>
+  <arg name="rviz" default="false"/>
+  <arg name="rviz_config" default="$(env HOME)/catkin_ws/pre-slam voxel map/trial1.rviz"/>
+
+  <param name="use_sim_time" value="true"/>
+
+  <!-- Mapping and traversability -->
+  <include file="$(find cave_multimodal_fusion)/launch/octomap_lio_sam.launch"/>
+  <include file="$(find cave_exploration)/launch/terrain_slope_guard.launch"/>
+
+  <!-- Perception -->
+  <include file="$(find cave_multimodal_fusion)/launch/rgb_thermal_lidar_a1.launch"/>
+  <include file="$(find cave_multimodal_fusion)/launch/multimodal_mode_selector_experiment.launch">
+    <arg name="operating_mode" value="$(arg configuration)"/>
+    <arg name="threshold_mode" value="$(arg threshold_mode)"/>
+  </include>
+  <include file="$(find cave_multimodal_fusion)/launch/multimodal_voxel_map_experiment.launch"/>
+
+  <!-- Exploration, mission and return to start -->
+  <include file="$(find cave_exploration)/launch/frontier_detector.launch"/>
+  <include file="$(find cave_exploration)/launch/autonomous_exploration.launch">
+    <arg name="max_run_seconds" value="$(arg max_run_seconds)"/>
+    <arg name="max_linear_speed" value="$(arg max_linear_speed)"/>
+  </include>
+
+  <!-- Metrics -->
+  <include file="$(find cave_multimodal_fusion)/launch/experiment_metrics.launch">
+    <arg name="configuration" value="$(arg configuration)"/>
+    <arg name="condition" value="$(arg condition)"/>
+    <arg name="run_id" value="$(arg run_id)"/>
+    <arg name="output_directory" value="$(arg output_directory)"/>
+  </include>
+
+  <node if="$(arg rviz)" pkg="rviz" type="rviz" name="rviz"
+        args="-d '$(arg rviz_config)'"/>
+</launch>

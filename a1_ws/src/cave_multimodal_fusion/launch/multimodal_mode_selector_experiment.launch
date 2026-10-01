@@ -6,10 +6,15 @@
   <!-- ADAPTIVE, RGB_LIDAR, THERMAL_LIDAR, or LIDAR_ONLY -->
   <arg name="operating_mode" default="ADAPTIVE"/>
 
-  <!-- These thresholds apply to composite RGB quality, not brightness alone. -->
-  <arg name="dark_threshold" default="0.15"/>
-  <arg name="light_threshold" default="0.20"/>
-  <arg name="frames_to_switch" default="10"/>
+  <!-- Mean RGB image brightness (0-1). Calibrated from the pilot MIXED runs:
+       median ~0.127, 75th percentile ~0.13. Old 0.15/0.20 never switched. -->
+  <arg name="dark_threshold" default="0.118"/>
+  <arg name="light_threshold" default="0.130"/>
+  <arg name="frames_to_switch" default="8"/>
+  <!-- fixed: use the thresholds above; auto: set them from brightness
+       percentiles over the first calibration_seconds of the run. -->
+  <arg name="threshold_mode" default="fixed"/>
+  <arg name="calibration_seconds" default="60.0"/>
   <arg name="max_image_age" default="2.0"/>
 
   <node pkg="cave_multimodal_fusion"
@@ -24,6 +29,8 @@
     <param name="dark_threshold" value="$(arg dark_threshold)"/>
     <param name="light_threshold" value="$(arg light_threshold)"/>
     <param name="frames_to_switch" value="$(arg frames_to_switch)"/>
+    <param name="threshold_mode" value="$(arg threshold_mode)"/>
+    <param name="calibration_seconds" value="$(arg calibration_seconds)"/>
     <param name="max_image_age" value="$(arg max_image_age)"/>
   </node>
 </launch>

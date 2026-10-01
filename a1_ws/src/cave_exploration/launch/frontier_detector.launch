@@ -15,7 +15,7 @@
     <param name="frontier_topic" value="/cave/exploration/frontiers"/>
     <param name="best_frontier_topic" value="/cave/exploration/best_frontier"/>
     <param name="rejected_goal_topic" value="/cave/exploration/rejected_goal"/>
-    <param name="update_rate" value="1.0"/>
+    <param name="update_rate" value="2.0"/> <!-- was 1.0 -->
     <param name="free_threshold" value="20"/>
     <param name="minimum_cluster_size" value="3"/>
     <param name="distance_weight" value="0.5"/>
@@ -25,11 +25,11 @@
     <param name="recovery_clearance_cells" value="3"/>
     <param name="recovery_revisit_radius" value="1.0"/>
     <param name="blacklist_radius" value="1.0"/>
-    <param name="blacklist_duration" value="60.0"/>
-    <param name="minimum_goal_distance" value="1.0"/>
+    <param name="blacklist_duration" value="120.0"/> <!-- was 60: fewer retries of bad goals -->
+    <param name="minimum_goal_distance" value="1.5"/> <!-- was 1.0: fewer tiny hops -->
     <param name="frontier_goal_tolerance" value="0.50"/>
     <param name="completed_goal_radius" value="1.0"/>
-    <param name="completed_goal_hold_seconds" value="120.0"/>
+    <param name="completed_goal_hold_seconds" value="600.0"/> <!-- was 120: avoid revisiting -->
     <param name="completion_match_radius" value="1.35"/>
     <param name="recovery_information_radius" value="3.0"/>
 

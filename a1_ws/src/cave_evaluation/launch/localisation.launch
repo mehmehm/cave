@@ -1,0 +1,13 @@
+<launch>
+  <!-- Stage 2: timestamp repair + LIO-SAM. Run after Gazebo and the A1 are up. -->
+  <arg name="lio_sam_launch" default="$(find lio_sam)/launch/run.launch"/>
+  <param name="use_sim_time" value="true"/>
+
+  <node pkg="cave_multimodal_fusion" type="fix_velodyne_time.py"
+        name="fix_velodyne_time" output="log" required="true"/>
+
+  <node pkg="cave_multimodal_fusion" type="filter_imu_timestamps.py"
+        name="filter_imu_timestamps" output="log" required="true"/>
+
+  <include file="$(arg lio_sam_launch)"/>
+</launch>

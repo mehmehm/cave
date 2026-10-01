@@ -1,10 +1,45 @@
 <launch>
   <arg name="map_topic" default="/cave/map/slope_safe_projected_map"/>
   <arg name="odom_topic" default="/lio_sam/mapping/odometry"/>
-  <arg name="goal_topic" default="/cave/exploration/best_frontier"/>
+  <arg name="frontier_goal_topic" default="/cave/exploration/best_frontier"/>
   <arg name="rejected_goal_topic" default="/cave/exploration/rejected_goal"/>
   <arg name="path_topic" default="/cave/exploration/path"/>
   <arg name="cmd_vel_topic" default="/cmd_vel"/>
+
+  <!-- Mission: time-boxed exploration then return to the start pose.
+       use_mission:=false restores the original frontier -> planner wiring. -->
+  <arg name="use_mission" default="true"/>
+  <arg name="max_run_seconds" default="2400"/>        <!-- 40 min hard cap (sim time) -->
+  <arg name="minimum_return_reserve" default="240"/>  <!-- always keep >= 4 min to get home -->
+  <arg name="return_tolerance" default="1.0"/>
+  <arg name="shutdown_on_finish" default="true"/>
+
+  <!-- Speed. Original: 0.18 m/s and 0.45 rad/s. CHAMP's A1 gait limits
+       (a1_config/config/gait/gait.yaml) must allow these values. -->
+  <arg name="max_linear_speed" default="0.35"/>
+  <arg name="max_angular_speed" default="0.90"/>
+
+  <arg name="planner_goal_topic" value="/cave/mission/goal" if="$(arg use_mission)"/>
+  <arg name="planner_goal_topic" value="$(arg frontier_goal_topic)" unless="$(arg use_mission)"/>
+  <arg name="planner_status_topic" value="/cave/mission/goal_status" if="$(arg use_mission)"/>
+  <arg name="planner_status_topic" value="/cave/exploration/goal_status" unless="$(arg use_mission)"/>
+
+  <node if="$(arg use_mission)" pkg="cave_exploration" type="mission_manager.py"
+        name="mission_manager" output="screen" required="true">
+    <param name="odom_topic" value="$(arg odom_topic)"/>
+    <param name="frontier_goal_topic" value="$(arg frontier_goal_topic)"/>
+    <param name="frontier_status_topic" value="/cave/exploration/goal_status"/>
+    <param name="goal_topic" value="/cave/mission/goal"/>
+    <param name="goal_status_topic" value="/cave/mission/goal_status"/>
+    <param name="max_run_seconds" value="$(arg max_run_seconds)"/>
+    <param name="minimum_return_reserve" value="$(arg minimum_return_reserve)"/>
+    <!-- Expected average speed on the way home; ~70% of the cap. -->
+    <param name="return_speed" value="$(eval 0.7 * float(arg('max_linear_speed')))"/>
+    <param name="tortuosity" value="1.8"/>
+    <param name="no_goal_seconds" value="60"/>
+    <param name="return_tolerance" value="$(arg return_tolerance)"/>
+    <param name="shutdown_on_finish" value="$(arg shutdown_on_finish)"/>
+  </node>
 
   <node pkg="cave_exploration"
         type="astar_planner.py"
@@ -12,13 +47,14 @@
         output="screen">
     <param name="map_topic" value="$(arg map_topic)"/>
     <param name="odom_topic" value="$(arg odom_topic)"/>
-    <param name="goal_topic" value="$(arg goal_topic)"/>
+    <param name="goal_topic" value="$(arg planner_goal_topic)"/>
+    <param name="goal_status_topic" value="$(arg planner_status_topic)"/>
     <param name="rejected_goal_topic" value="$(arg rejected_goal_topic)"/>
     <param name="path_topic" value="$(arg path_topic)"/>
     <param name="free_threshold" value="20"/>
     <param name="robot_radius" value="0.30"/>
     <param name="nearest_free_radius" value="1.0"/>
-    <param name="replan_rate" value="1.0"/>
+    <param name="replan_rate" value="2.0"/>             <!-- was 1.0 -->
     <param name="goal_timeout" value="5.0"/>
     <param name="route_consistency_penalty" value="0.35"/>
     <param name="maximum_expansions" value="300000"/>
@@ -33,14 +69,15 @@
     <param name="path_topic" value="$(arg path_topic)"/>
     <param name="odom_topic" value="$(arg odom_topic)"/>
     <param name="cmd_vel_topic" value="$(arg cmd_vel_topic)"/>
-    <param name="control_rate" value="10.0"/>
-    <param name="lookahead_distance" value="0.50"/>
-    <param name="goal_tolerance" value="0.30"/>
-    <param name="maximum_linear_speed" value="0.18"/>
-    <param name="maximum_angular_speed" value="0.45"/>
-    <param name="angular_gain" value="1.4"/>
-    <param name="rotate_in_place_angle" value="0.65"/>
-    <param name="slowdown_distance" value="0.45"/>
+    <param name="control_rate" value="15.0"/>           <!-- was 10 -->
+    <param name="lookahead_distance" value="0.80"/>     <!-- was 0.50: smoother at speed -->
+    <param name="goal_tolerance" value="0.45"/>         <!-- was 0.30: frontier goals need no precision -->
+    <param name="maximum_linear_speed" value="$(arg max_linear_speed)"/>
+    <param name="maximum_angular_speed" value="$(arg max_angular_speed)"/>
+    <param name="angular_gain" value="1.6"/>
+    <param name="rotate_in_place_angle" value="0.90"/>  <!-- was 0.65: fewer stop-and-turns -->
+    <param name="slowdown_distance" value="0.70"/>
+    <param name="maximum_climb_speed" value="$(eval min(0.30, float(arg('max_linear_speed'))))"/>
     <param name="path_timeout" value="5.0"/>
     <param name="odom_timeout" value="1.0"/>
   </node>

@@ -48,6 +48,8 @@ class ExperimentMetricsLogger:
         "active_cloud_messages", "active_points", "voxel_count",
         "visible_voxel_count", "distance_m", "planner_failures",
         "plans_succeeded", "goals_reached", "mode_switches",
+        # Added for time-boxed missions with return to start.
+        "elapsed_s", "robot_x", "robot_y", "distance_to_start", "mission_phase",
     ]
 
     def __init__(self):
@@ -95,6 +97,14 @@ class ExperimentMetricsLogger:
         self.last_follower_status = ""
         self.mode_switches = 0
         self.last_mode = None
+        self.start_position = None
+        self.mission_phase = "NONE"
+        self.mission_events = []
+        # With use_sim_time, Time.now() is 0 until /clock arrives. Starting the
+        # clock at 0 made summary durations include Gazebo start-up (e.g. the
+        # RGB-LiDAR pilot summary was ~570 s longer than its CSV).
+        while not rospy.is_shutdown() and rospy.Time.now().to_sec() <= 0.0:
+            rospy.sleep(0.1)
         self.start_time = rospy.Time.now()
 
         self.csv_file = open(self.csv_path, "w", newline="")
@@ -148,6 +158,12 @@ class ExperimentMetricsLogger:
             "/cave/exploration/follower_status", String,
             self.follower_callback, queue_size=20
         )
+        rospy.Subscriber(
+            "/cave/mission/phase", String, self.phase_callback, queue_size=10
+        )
+        rospy.Subscriber(
+            "/cave/mission/event", String, self.event_callback, queue_size=10
+        )
 
         rospy.Timer(rospy.Duration(1.0), self.write_row)
         rospy.on_shutdown(self.finish)
@@ -197,7 +213,23 @@ class ExperimentMetricsLogger:
                 # Ignore localisation resets or large loop-closure jumps.
                 if step <= 1.0:
                     self.distance_m += step
+            if self.start_position is None:
+                self.start_position = current
             self.last_position = current
+
+    def phase_callback(self, message):
+        with self.lock:
+            self.mission_phase = message.data
+
+    def event_callback(self, message):
+        with self.lock:
+            self.mission_events.append(message.data)
+
+    def distance_to_start(self):
+        if self.start_position is None or self.last_position is None:
+            return float("nan")
+        return math.hypot(self.last_position[0] - self.start_position[0],
+                          self.last_position[1] - self.start_position[1])
 
     def planner_callback(self, message):
         with self.lock:
@@ -208,9 +240,11 @@ class ExperimentMetricsLogger:
 
     def follower_callback(self, message):
         with self.lock:
+            # Arriving home is not an exploration goal.
             if (
                 message.data.startswith("GOAL_REACHED")
                 and not self.last_follower_status.startswith("GOAL_REACHED")
+                and self.mission_phase in ("NONE", "EXPLORING")
             ):
                 self.goals_reached += 1
             self.last_follower_status = message.data
@@ -238,6 +272,11 @@ class ExperimentMetricsLogger:
             "plans_succeeded": self.plans_succeeded,
             "goals_reached": self.goals_reached,
             "mode_switches": self.mode_switches,
+            "elapsed_s": "%.3f" % max(0.0, (rospy.Time.now() - self.start_time).to_sec()),
+            "robot_x": self.last_position[0] if self.last_position else float("nan"),
+            "robot_y": self.last_position[1] if self.last_position else float("nan"),
+            "distance_to_start": self.distance_to_start(),
+            "mission_phase": self.mission_phase,
         }
 
     def write_row(self, _event):
@@ -264,6 +303,10 @@ class ExperimentMetricsLogger:
                 "plans_succeeded": self.plans_succeeded,
                 "goals_reached": self.goals_reached,
                 "mode_switches": self.mode_switches,
+                "mission_phase": self.mission_phase,
+                "returned_to_start": self.mission_phase == "RETURNED",
+                "final_distance_to_start_m": self.distance_to_start(),
+                "mission_events": list(self.mission_events),
                 "metrics": {
                     name: metric.summary()
                     for name, metric in self.metrics.items()
